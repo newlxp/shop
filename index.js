@@ -164,26 +164,100 @@ function renderCart() {
     footer.style.display = 'block';
 }
 
-function checkout() {
-    if(cart.length === 0) return;
 
-    // Имитация успешной оплаты
-    const newPurchases = cart.map(item => ({
-        ...item,
-        date: new Date().toISOString(),
-        password: Math.random().toString(36).substring(2, 10).toUpperCase(),
-        link: `https://drive.example.com/f/${item.id}`
-    }));
 
-    purchases = [...newPurchases, ...purchases];
-    localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
+async function checkout() {
+    if (cart.length === 0) {
+        alert('Корзина пуста!');
+        return;
+    }
 
-    cart = [];
-    saveCart();
-    updateBadge();
+    const total = cart.reduce((sum, item) => sum + item.price, 0);
 
-    alert('Оплата прошла успешно! Доступ открыт.');
-    goTo('purchases');
+    // Показываем индикатор загрузки
+    const checkoutBtn = document.querySelector('.checkout-btn');
+    const originalText = checkoutBtn.textContent;
+    checkoutBtn.textContent = 'Обработка...';
+    checkoutBtn.disabled = true;
+
+    try {
+        // Создаем платеж через Cloudflare Worker
+        const response = await fetch('https://lxpshop-webhook.emilovchinnikov.workers.dev/create-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                items: cart,
+                total: total,
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка создания платежа');
+        }
+
+        const data = await response.json();
+
+        // Перенаправляем на страницу оплаты ЮKassa
+        if (data.confirmation_url) {
+            // Сохраняем номер заказа в localStorage
+            localStorage.setItem('current_order_id', data.order_id);
+            // Переходим на оплату
+            window.location.href = data.confirmation_url;
+        } else {
+            throw new Error('Нет ссылки на оплату');
+        }
+
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Ошибка при создании платежа: ' + error.message);
+        checkoutBtn.textContent = originalText;
+        checkoutBtn.disabled = false;
+    }
+}
+
+// Проверка статуса платежа при загрузке страницы
+document.addEventListener('DOMContentLoaded', async () => {
+    // Проверяем, есть ли параметр ?success=true в URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = localStorage.getItem('current_order_id');
+
+    if (urlParams.get('success') === 'true' && orderId) {
+        // Показываем успешную оплату
+        showSuccessPage();
+
+        // Загружаем данные о покупке
+        try {
+            const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
+            const purchase = await response.json();
+
+            if (purchase) {
+                // Добавляем покупку в localStorage
+                let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
+                purchases.unshift(purchase);
+                localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
+
+                // Очищаем корзину и текущий заказ
+                cart = [];
+                localStorage.setItem('lxp_cart', JSON.stringify(cart));
+                localStorage.removeItem('current_order_id');
+
+                // Переходим на страницу покупок
+                setTimeout(() => {
+                    goTo('purchases');
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error loading purchase:', error);
+        }
+    }
+
+    updateBadge(); // ✅ ИСПРАВЛЕНО: было updateCartCount()
+});
+
+function showSuccessPage() {
+    alert('✅ Оплата прошла успешно! Перенаправляем в раздел "Мои покупки"...');
 }
 
 // === PURCHASES LOGIC ===

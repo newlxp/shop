@@ -283,28 +283,34 @@ function renderPurchases() {
         return;
     }
 
-    // Date.now() всегда возвращает абсолютное время (мс от 1970 UTC)
     const now = Date.now();
     const H24 = 24 * 60 * 60 * 1000;
 
     container.innerHTML = purchases.map(p => {
         if (!p.created_at) return '';
 
-        // 1. Абсолютный расчёт разницы (не зависит от часовых поясов)
-        const purchaseTimestamp = new Date(p.created_at).getTime();
-        const diff = now - purchaseTimestamp;
+        // ✅ Явно указываем что дата в UTC (добавляем Z если нет)
+        const dateString = p.created_at.endsWith('Z') ? p.created_at : p.created_at + 'Z';
+        const purchaseTime = new Date(dateString).getTime();
 
-        // Если дата из будущего (рассинхрон часов), считаем как 0
+        // ✅ Считаем разницу
+        const diff = now - purchaseTime;
         const safeDiff = diff < 0 ? 0 : diff;
 
+        // ✅ Считаем оставшиеся часы
         const hoursLeft = Math.max(0, Math.floor((H24 - safeDiff) / (60 * 60 * 1000)));
         const isExp = safeDiff >= H24;
 
-        // 2. Форматирование только для отображения (явно МСК)
-        const displayDate = new Date(purchaseTimestamp).toLocaleString('ru-RU', {
+        // ✅ Форматируем для отображения в МСК
+        const displayDate = new Date(dateString).toLocaleString('ru-RU', {
             timeZone: 'Europe/Moscow',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
         });
 
         return `

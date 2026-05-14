@@ -219,42 +219,54 @@ async function checkout() {
 
 // Проверка статуса платежа при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
+    updateBadge(); // ✅ Сначала обновляем бейдж
+
     // Проверяем, есть ли параметр ?success=true в URL
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = localStorage.getItem('current_order_id');
 
-    if (urlParams.get('success') === 'true' && orderId) {
-        // Показываем успешную оплату
-        showSuccessPage();
+    // Показываем страницу покупок, если есть success=true
+    if (urlParams.get('success') === 'true') {
+        // Показываем страницу покупок СРАЗУ
+        goTo('purchases');
 
-        // Загружаем данные о покупке
-        try {
-            const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
-            const purchase = await response.json();
+        if (orderId) {
+            // Загружаем данные о покупке
+            try {
+                const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
 
-            if (purchase) {
-                // Добавляем покупку в localStorage
-                let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
-                purchases.unshift(purchase);
-                localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
+                if (response.ok) {
+                    const purchase = await response.json();
+                    console.log('✅ Purchase loaded:', purchase);
 
-                // Очищаем корзину и текущий заказ
-                cart = [];
-                localStorage.setItem('lxp_cart', JSON.stringify(cart));
-                localStorage.removeItem('current_order_id');
+                    // Добавляем покупку в localStorage
+                    let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
 
-                // Переходим на страницу покупок
-                setTimeout(() => {
-                    goTo('purchases');
-                }, 2000);
+                    // Проверяем, нет ли уже такой покупки
+                    const exists = purchases.some(p => p.order_id === purchase.order_id);
+                    if (!exists) {
+                        purchases.unshift(purchase);
+                        localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
+
+                        // Очищаем корзину и текущий заказ
+                        cart = [];
+                        localStorage.setItem('lxp_cart', JSON.stringify(cart));
+                        localStorage.removeItem('current_order_id');
+
+                        // Перерисовываем покупки
+                        renderPurchases();
+                    }
+                } else {
+                    console.error('Failed to load purchase, status:', response.status);
+                }
+            } catch (error) {
+                console.error('Error loading purchase:', error);
             }
-        } catch (error) {
-            console.error('Error loading purchase:', error);
         }
     }
-
-    updateBadge(); // ✅ ИСПРАВЛЕНО: было updateCartCount()
 });
+
+
 
 function showSuccessPage() {
     alert('✅ Оплата прошла успешно! Перенаправляем в раздел "Мои покупки"...');
@@ -272,7 +284,9 @@ function renderPurchases() {
     const H24 = 24 * 60 * 60 * 1000;
 
     container.innerHTML = purchases.map(p => {
-        const diff = now - new Date(p.date).getTime();
+        // Используем правильные имена полей из базы
+        const purchaseDate = p.created_at ? new Date(p.created_at).getTime() : now;
+        const diff = now - purchaseDate;
         const isExp = diff > H24;
         const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (60 * 60 * 1000)));
 
@@ -281,11 +295,12 @@ function renderPurchases() {
                     <span class="purchase-status ${isExp ? 'status-exp' : 'status-ok'}">
                         ${isExp ? 'Ссылка истекла' : `Активно (${hoursLeft} ч.)`}
                     </span>
-                    <h3 style="margin-bottom:1rem;">${p.title}</h3>
+                    <h3 style="margin-bottom:1rem;">${p.product_title || 'Без названия'}</h3>
+                    ${p.product_subject ? `<p style="color:#666; font-size:0.9rem; margin-bottom:1rem;">${p.product_subject}</p>` : ''}
 
                     <div class="meta-box">
                         <div class="meta-label">Пароль от архива (доступен всегда)</div>
-                        <div class="meta-value" style="color:var(--accent); font-size:1.1rem;">${p.password}</div>
+                        <div class="meta-value" style="color:var(--accent); font-size:1.1rem;">${p.password || 'Не указан'}</div>
                     </div>
 
                     <div class="meta-box">
@@ -293,8 +308,15 @@ function renderPurchases() {
                         <div class="meta-value">
                             ${isExp
             ? '<span class="link-expired">Срок действия истек</span>'
-            : `<a href="${p.link}" class="link-active" download>Скачать файл</a>`
+            : `<a href="${p.download_link || '#'}" class="link-active" download>Скачать файл</a>`
         }
+                        </div>
+                    </div>
+                    
+                    <div class="meta-box">
+                        <div class="meta-label">Дата покупки</div>
+                        <div class="meta-value" style="font-size:0.85rem;">
+                            ${p.created_at ? new Date(p.created_at).toLocaleString('ru-RU') : 'Неизвестно'}
                         </div>
                     </div>
                 </div>`;

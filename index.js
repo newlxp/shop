@@ -287,26 +287,13 @@ function renderPurchases() {
     const H24 = 24 * 60 * 60 * 1000;
 
     container.innerHTML = purchases.map(p => {
-        // ✅ Правильно парсим дату из Supabase (она в UTC)
-        const purchaseDate = new Date(p.created_at);
+        // ✅ Получаем время покупки из базы (UTC)
+        const purchaseDateUTC = new Date(p.created_at);
 
-        // ✅ Получаем время покупки в миллисекундах (UTC)
-        const purchaseTimeUTC = purchaseDate.getTime();
+        // ✅ Добавляем 3 часа для UTC+3 (Москва/Махачкала)
+        const moscowTime = new Date(purchaseDateUTC.getTime() + (3 * 60 * 60 * 1000));
 
-        // ✅ Получаем текущее время в UTC
-        const nowUTC = now.getTime();
-
-        // ✅ Считаем разницу
-        const diff = nowUTC - purchaseTimeUTC;
-        const isExp = diff > H24;
-        const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (60 * 60 * 1000)));
-
-        // ✅ Форматируем дату для отображения в Москве (UTC+3)
-        // Создаём дату с явным указанием часового пояса
-        const moscowTime = new Date(purchaseDate.toLocaleString('en-US', {
-            timeZone: 'Europe/Moscow'
-        }));
-
+        // ✅ Форматируем дату
         const formattedDate = moscowTime.toLocaleString('ru-RU', {
             year: 'numeric',
             month: '2-digit',
@@ -317,36 +304,42 @@ function renderPurchases() {
             hour12: false
         });
 
+        // ✅ Для расчёта оставшихся часов тоже используем московское время
+        const purchaseTimeMSK = moscowTime.getTime();
+        const nowMSK = now.getTime() + (3 * 60 * 60 * 1000); // Текущее время + 3 часа
+        const diff = nowMSK - purchaseTimeMSK;
+        const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (60 * 60 * 1000)));
+        const isExp = diff > H24;
+
         return `
-                <div class="list-card" style="border-left: 4px solid ${isExp ? 'var(--danger)' : 'var(--success)'}">
-                    <span class="purchase-status ${isExp ? 'status-exp' : 'status-ok'}">
-                        ${isExp ? 'Ссылка истекла' : `Активно (${hoursLeft} ч.)`}
-                    </span>
-                    <h3 style="margin-bottom:1rem;">${p.product_title || 'Без названия'}</h3>
-                    ${p.product_subject ? `<p style="color:#666; font-size:0.9rem; margin-bottom:1rem;">${p.product_subject}</p>` : ''}
+            <div class="list-card" style="border-left: 4px solid ${isExp ? 'var(--danger)' : 'var(--success)'}">
+                <span class="purchase-status ${isExp ? 'status-exp' : 'status-ok'}">
+                    ${isExp ? 'Ссылка истекла' : `Активно (${hoursLeft} ч.)`}
+                </span>
+                <h3 style="margin-bottom:1rem;">${p.product_title || 'Без названия'}</h3>
+                
+                <div class="meta-box">
+                    <div class="meta-label">Пароль от архива (доступен всегда)</div>
+                    <div class="meta-value" style="color:var(--accent); font-size:1.1rem;">${p.password || 'Не указан'}</div>
+                </div>
 
-                    <div class="meta-box">
-                        <div class="meta-label">Пароль от архива (доступен всегда)</div>
-                        <div class="meta-value" style="color:var(--accent); font-size:1.1rem;">${p.password || 'Не указан'}</div>
-                    </div>
-
-                    <div class="meta-box">
-                        <div class="meta-label">Ссылка на скачивание (24 часа)</div>
-                        <div class="meta-value">
-                            ${isExp
+                <div class="meta-box">
+                    <div class="meta-label">Ссылка на скачивание (24 часа)</div>
+                    <div class="meta-value">
+                        ${isExp
             ? '<span class="link-expired">Срок действия истек</span>'
             : `<a href="${p.download_link || '#'}" class="link-active" download>Скачать файл</a>`
         }
-                        </div>
                     </div>
-                    
-                    <div class="meta-box">
-                        <div class="meta-label">Дата покупки (МСК)</div>
-                        <div class="meta-value" style="font-size:0.85rem;">
-                            ${formattedDate}
-                        </div>
+                </div>
+                
+                <div class="meta-box">
+                    <div class="meta-label">Дата покупки (МСК)</div>
+                    <div class="meta-value" style="font-size:0.85rem;">
+                        ${formattedDate}
                     </div>
-                </div>`;
+                </div>
+            </div>`;
     }).join('');
 }
 

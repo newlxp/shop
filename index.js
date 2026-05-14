@@ -1,40 +1,57 @@
 // === DATA ===
 const subjectsData = {
-    1: [
-        {id: 'eng-a1', name: 'Английский язык А1', count: 1},
+    1: [ //для 1 курса
+
     ],
 
-    2: [
-        //для 2 курса
+    2: [ //для 2 курса
         {id: 'js-dom', name: 'JavaScript DOM', count: 6},
         {id: 'nodejs', name: 'Node.js', count: 14},
         {id: 'python-web', name: 'Python on web', count: 17},
         {id: 'xml', name: 'XML технологии', count: 9},
         {id: 'algo', name: 'Алгоритмы и структуры данных', count: 5},
+        {id: 'eng-a2', name: 'Английский язык А2+', count: 13},
+        {id: 'mlta', name: 'Математическая логика и теория алгоритмов', count: 5},
+        {id: 'ts', name: 'ООП на TypeScript', count: 4},
+        {id: 'subd', name: 'СУБД (PostgreSQL, MySQL)', count: 18},
+        {id: 'tvms', name: 'Теория вероятностей и математическая статистика', count: 7},
+        {id: 'evm', name: 'Элементы высшей математики', count: 4},
+
     ],
 
-    3: [
+    3: [ //для 3 курса
         {id: 'java', name: 'Java', count: 1}
     ]
 };
 
 const productsData = {
     //для 1 курса
-    'eng-a1': [
-        {id: 1101, title: 'Checkpoint 1: Introduction to IT', price: 150},
-    ],
 
+
+    //для 2 курса
     'js-dom': [
-        {id: 2101, title: 'КТ №1. Таблица с генерацией чисел', price: 50},
-        {id: 2102, title: 'КТ №2. Работа с контентом на странице', price: 50},
-        {id: 2103, title: 'КТ №3. Создание выпадающего меню', price: 50},
-        {id: 2104, title: 'КТ №4. Слайдер', price: 50},
-        {id: 2105, title: 'КТ №5. Банковская карта', price: 50},
-        {id: 2106, title: 'КТ №6. Создание динамичного веб-приложения', price: 50}
+        {id: 2101, title: 'КТ №1. Таблица с генерацией чисел', price: 150},
+        {id: 2102, title: 'КТ №2. Работа с контентом на странице', price: 150},
+        {id: 2103, title: 'КТ №3. Создание выпадающего меню', price: 100},
+        {id: 2104, title: 'КТ №4. Слайдер', price: 100},
+        {id: 2105, title: 'КТ №5. Банковская карта', price: 250},
+        {id: 2106, title: 'КТ №6. Создание динамичного веб-приложения', price: 300}
     ],
     'nodejs': [
-        {id: 2201, title: 'КР №1: Введение в Node.js', price: 400},
-        {id: 2202, title: 'КР №2: Express сервер', price: 450}
+        {id: 2201, title: 'КТ №1. Установка Node.js. REPL', price: 50},
+        {id: 2202, title: 'КТ №2. Модули. Глобальные объекты', price: 50},
+        {id: 2203, title: 'КТ №3. NPM. Package.json. Работа с пакетами', price: 100},
+        {id: 2204, title: 'КТ №4. Nodemon. Асинхронность в Node.js.', price: 100},
+        {id: 2205, title: 'КТ №5. Работа с файлами. События в Node.js. Потоки данных. Канал Pipe.', price: 100},
+        {id: 2206, title: 'КТ №6. Сервер. Получение данных от клиента. Шаблоны', price: 100},
+        {id: 2207, title: 'КТ №7. Подключение и выполнение запросов к MySQL. Операции с данными', price: 100},
+        {id: 2208, title: 'КТ №8. Пулы подключений', price: 100},
+        {id: 2209, title: 'КТ №9. Express. Отправка ответа. Маршрутизация.', price: 100},
+        {id: 2210, title: 'КТ №10. Express. Переадресация. POST-запросы. JSON и AJAX.', price: 100},
+        {id: 2211, title: 'КТ №11. Express. Handlebars.', price: 100},
+        {id: 2212, title: 'КТ №12. Express. EJS. Pug.', price: 100},
+        {id: 2213, title: 'КТ №13. Express. Создание API.', price: 100},
+        {id: 2214, title: 'КТ №14. Конфигурация multer. Загрузка файлов с помощью multer.', price: 100}
     ],
     'python-web': [
         {id: 2301, title: 'КР №1: Flask основы', price: 400},
@@ -48,6 +65,27 @@ const productsData = {
         {id: 2501, title: 'КР №1: Сортировки', price: 350},
         {id: 2502, title: 'КР №2: Деревья и графы', price: 450}
     ],
+    'eng-a2': [
+
+    ],
+    'mlta': [
+
+    ],
+    'ts': [
+
+    ],
+    'subd': [
+
+    ],
+    'tvms': [
+
+    ],
+    'evm': [
+
+    ],
+
+
+    //для 3 курса
     'java': [
         {id: 3101, title: 'КР №1: Фундамент и синтаксис', price: 250}
     ]

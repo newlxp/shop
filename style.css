@@ -876,7 +876,7 @@ footer {
     }
 
     .subjects-header {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         gap: 1rem;
     }

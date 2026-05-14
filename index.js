@@ -278,31 +278,43 @@ function showSuccessPage() {
 // === PURCHASES LOGIC ===
 function renderPurchases() {
     const container = document.getElementById('purchasesList');
-    if (purchases.length === 0) {
+    if(purchases.length === 0) {
         container.innerHTML = '<div class="list-card" style="text-align:center; padding:3rem; color:#666;">Покупок пока нет</div>';
         return;
     }
 
-    const now = Date.now();
+    const now = new Date();
     const H24 = 24 * 60 * 60 * 1000;
 
     container.innerHTML = purchases.map(p => {
-        // ✅ Правильно парсим дату с учётом часового пояса
-        const purchaseDate = new Date(p.created_at).getTime();
-        const diff = now - purchaseDate;
+        // ✅ Правильно парсим дату из Supabase (она в UTC)
+        const purchaseDate = new Date(p.created_at);
+
+        // ✅ Получаем время покупки в миллисекундах (UTC)
+        const purchaseTimeUTC = purchaseDate.getTime();
+
+        // ✅ Получаем текущее время в UTC
+        const nowUTC = now.getTime();
+
+        // ✅ Считаем разницу
+        const diff = nowUTC - purchaseTimeUTC;
         const isExp = diff > H24;
         const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (60 * 60 * 1000)));
 
-        // ✅ Форматируем дату в локальном времени (UTC+3 для Махачкалы/Москвы)
-        const formattedDate = new Date(p.created_at).toLocaleString('ru-RU', {
+        // ✅ Форматируем дату для отображения в Москве (UTC+3)
+        // Создаём дату с явным указанием часового пояса
+        const moscowTime = new Date(purchaseDate.toLocaleString('en-US', {
+            timeZone: 'Europe/Moscow'
+        }));
+
+        const formattedDate = moscowTime.toLocaleString('ru-RU', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            hour12: false,
-            timeZone: 'Europe/Moscow' // ✅ Явно указываем часовой пояс
+            hour12: false
         });
 
         return `

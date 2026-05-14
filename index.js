@@ -215,7 +215,7 @@ async function checkout() {
 
     } catch (error) {
         console.error('Payment error:', error);
-        alert('Ошибка при создании платежа: ' + error.message);
+        alert('Ошибка при создании платежа: ' + error.message + '\nПопробуйте включить или отключить VPN');
         checkoutBtn.textContent = originalText;
         checkoutBtn.disabled = false;
     }

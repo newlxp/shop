@@ -490,6 +490,14 @@ header {
     margin-top: 2rem;
 }
 
+.products-header{
+    display: flex;
+}
+
+.products-header h2{
+    padding: 0.4rem 0 0 1.5rem;
+}
+
 .product-card {
     background: var(--bg-card);
     border-radius: 14px;
@@ -497,11 +505,11 @@ header {
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: transform 0.2s;
+    transition-duration: 0.2s;
 }
 
 .product-card:hover {
-    transform: translateY(-4px);
+    /*transform: translateY(-4px);*/
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
@@ -876,9 +884,13 @@ footer {
     }
 
     .subjects-header {
-        flex-direction: row;
         align-items: flex-start;
         gap: 1rem;
+        /*padding-top: 1rem;*/
+    }
+
+    .subjects-header button {
+        margin-top: 0.8rem;
     }
 
     .footer-inner {

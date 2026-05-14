@@ -223,68 +223,50 @@ async function checkout() {
 
 // Проверка статуса платежа при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
-    updateBadge();
+    updateBadge(); // ✅ Сначала обновляем бейдж
 
+    // Проверяем, есть ли параметр ?success=true в URL
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = localStorage.getItem('current_order_id');
 
-    // Проверяем, есть ли параметр ?success=true в URL
+    // Показываем страницу покупок, если есть success=true
     if (urlParams.get('success') === 'true') {
-        // ✅ Показываем страницу покупок СРАЗУ
+        // Показываем страницу покупок СРАЗУ
         goTo('purchases');
 
-        // ✅ Показываем уведомление
-        alert('✅ Оплата прошла успешно! Синхронизируем данные...');
+        if (orderId) {
+            // Загружаем данные о покупке
+            try {
+                const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
 
-        // ✅ Очищаем URL (убираем ?success=true) чтобы избежать бесконечной перезагрузки
-        window.history.replaceState({}, document.title, window.location.pathname);
+                if (response.ok) {
+                    const purchase = await response.json();
+                    console.log('✅ Purchase loaded:', purchase);
 
-        // ✅ Ждём 1 секунду и перезагружаем страницу (даём время вебхуку записать данные в БД)
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
+                    // Добавляем покупку в localStorage
+                    let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
 
-        return; // Останавливаем выполнение, страница перезагрузится
-    }
+                    // Проверяем, нет ли уже такой покупки
+                    const exists = purchases.some(p => p.order_id === purchase.order_id);
+                    if (!exists) {
+                        purchases.unshift(purchase);
+                        localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
 
-    // === ЭТОТ БЛОК ВЫПОЛНЯЕТСЯ ПОСЛЕ ПЕРЕЗАГРУЗКИ ===
-    if (orderId) {
-        // Загружаем данные о покупке
-        try {
-            const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
+                        // Очищаем корзину и текущий заказ
+                        cart = [];
+                        localStorage.setItem('lxp_cart', JSON.stringify(cart));
+                        localStorage.removeItem('current_order_id');
 
-            if (response.ok) {
-                const purchase = await response.json();
-                console.log('✅ Purchase loaded:', purchase);
-
-                // Добавляем покупку в localStorage
-                let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
-
-                // Проверяем, нет ли уже такой покупки
-                const exists = purchases.some(p => p.order_id === purchase.order_id);
-                if (!exists) {
-                    purchases.unshift(purchase);
-                    localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
-
-                    // Очищаем корзину и текущий заказ
-                    cart = [];
-                    localStorage.setItem('lxp_cart', JSON.stringify(cart));
-                    localStorage.removeItem('current_order_id');
-
-                    // Перерисовываем покупки
-                    renderPurchases();
+                        // Перерисовываем покупки
+                        renderPurchases();
+                    }
+                } else {
+                    console.error('Failed to load purchase, status:', response.status);
                 }
-            } else {
-                console.error('Failed to load purchase, status:', response.status);
+            } catch (error) {
+                console.error('Error loading purchase:', error);
             }
-        } catch (error) {
-            console.error('Error loading purchase:', error);
         }
-    }
-
-    // ✅ Если страница покупок активна — рендерим список
-    if (document.getElementById('purchases')?.classList.contains('active')) {
-        renderPurchases();
     }
 });
 

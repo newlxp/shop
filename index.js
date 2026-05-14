@@ -7,10 +7,10 @@ const subjectsData = {
     2: [
         //для 2 курса
         { id: 'js-dom', name: 'JavaScript DOM', count: 6 },
-        // { id: 'nodejs', name: 'Node.js', count: 14 },
-        // { id: 'python-web', name: 'Python on web', count: 17 },
-        // { id: 'xml', name: 'XML технологии', count: 9 },
-        // { id: 'algo', name: 'Алгоритмы и структуры данных', count: 5 },
+        { id: 'nodejs', name: 'Node.js', count: 14 },
+        { id: 'python-web', name: 'Python on web', count: 17 },
+        { id: 'xml', name: 'XML технологии', count: 9 },
+        { id: 'algo', name: 'Алгоритмы и структуры данных', count: 5 },
     ],
 
     3: [
@@ -32,22 +32,22 @@ const productsData = {
         { id: 2105, title: 'КТ №5. Банковская карта', price: 50 },
         { id: 2106, title: 'КТ №6. Создание динамичного веб-приложения', price: 50 }
     ],
-    // 'nodejs': [
-    //     { id: 2201, title: 'КР №1: Введение в Node.js', price: 400 },
-    //     { id: 2202, title: 'КР №2: Express сервер', price: 450 }
-    // ],
-    // 'python-web': [
-    //     { id: 2301, title: 'КР №1: Flask основы', price: 400 },
-    //     { id: 2302, title: 'КР №2: Django ORM', price: 500 }
-    // ],
-    // 'xml': [
-    //     { id: 2401, title: 'КР №1: XML и DTD', price: 300 },
-    //     { id: 2402, title: 'КР №2: XSLT трансформации', price: 400 }
-    // ],
-    // 'algo': [
-    //     { id: 2501, title: 'КР №1: Сортировки', price: 350 },
-    //     { id: 2502, title: 'КР №2: Деревья и графы', price: 450 }
-    // ],
+    'nodejs': [
+        { id: 2201, title: 'КР №1: Введение в Node.js', price: 400 },
+        { id: 2202, title: 'КР №2: Express сервер', price: 450 }
+    ],
+    'python-web': [
+        { id: 2301, title: 'КР №1: Flask основы', price: 400 },
+        { id: 2302, title: 'КР №2: Django ORM', price: 500 }
+    ],
+    'xml': [
+        { id: 2401, title: 'КР №1: XML и DTD', price: 300 },
+        { id: 2402, title: 'КР №2: XSLT трансформации', price: 400 }
+    ],
+    'algo': [
+        { id: 2501, title: 'КР №1: Сортировки', price: 350 },
+        { id: 2502, title: 'КР №2: Деревья и графы', price: 450 }
+    ],
     'java': [
         { id: 3101, title: 'КР №1: Фундамент и синтаксис', price: 250 }
     ]

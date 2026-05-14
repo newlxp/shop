@@ -290,7 +290,7 @@ function renderPurchases() {
         // ✅ Получаем время покупки из базы (UTC)
         const purchaseDateUTC = new Date(p.created_at);
 
-        // ✅ Добавляем 3 часа для UTC+3 (Москва/Махачкала)
+        // ✅ Добавляем 3 часа для UTC+3 (Москва/Махачкала))
         const moscowTime = new Date(purchaseDateUTC.getTime() + (3 * 60 * 60 * 1000));
 
         // ✅ Форматируем дату

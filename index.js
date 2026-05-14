@@ -304,7 +304,7 @@ function renderPurchases() {
             hour12: false
         });
 
-        // ✅ Для расчёта оставшихся часов тоже используем московское время
+        // ✅ Для расчёта оставшихся часов тоже используем московское времяя
         const purchaseTimeMSK = moscowTime.getTime();
         const nowMSK = now.getTime() + (3 * 60 * 60 * 1000); // Текущее время + 3 часа
         const diff = nowMSK - purchaseTimeMSK;

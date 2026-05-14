@@ -832,7 +832,11 @@ footer {
     }
 
     .hero-text{
-        font-size: 1.6rem;
+        display: none;
+    }
+
+    .hero-sub {
+        font-size: 1rem;
     }
 
     .courses-page {

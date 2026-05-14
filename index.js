@@ -308,7 +308,7 @@ function renderPurchases() {
         const purchaseTimeMSK = moscowTime.getTime();
         const nowMSK = now.getTime() + (3 * 60 * 60 * 1000); // Текущее время + 3 часа
         const diff = nowMSK - purchaseTimeMSK;
-        const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (60 * 60 * 1000)));
+        const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (3 * 60 * 60 * 1000)));
         const isExp = diff > H24;
 
         return `

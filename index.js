@@ -283,33 +283,29 @@ function renderPurchases() {
         return;
     }
 
-    const now = new Date();
+    // Date.now() всегда возвращает абсолютное время (мс от 1970 UTC)
+    const now = Date.now();
     const H24 = 24 * 60 * 60 * 1000;
 
     container.innerHTML = purchases.map(p => {
-        // ✅ Получаем время покупки из базы (UTC)
-        const purchaseDateUTC = new Date(p.created_at);
+        if (!p.created_at) return '';
 
-        // ✅ Добавляем 3 часа для UTC+3 (Москва/Махачкала))
-        const moscowTime = new Date(purchaseDateUTC.getTime() + (3 * 60 * 60 * 1000));
+        // 1. Абсолютный расчёт разницы (не зависит от часовых поясов)
+        const purchaseTimestamp = new Date(p.created_at).getTime();
+        const diff = now - purchaseTimestamp;
 
-        // ✅ Форматируем дату
-        const formattedDate = moscowTime.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
+        // Если дата из будущего (рассинхрон часов), считаем как 0
+        const safeDiff = diff < 0 ? 0 : diff;
+
+        const hoursLeft = Math.max(0, Math.floor((H24 - safeDiff) / (60 * 60 * 1000)));
+        const isExp = safeDiff >= H24;
+
+        // 2. Форматирование только для отображения (явно МСК)
+        const displayDate = new Date(purchaseTimestamp).toLocaleString('ru-RU', {
+            timeZone: 'Europe/Moscow',
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
         });
-
-        // ✅ Для расчёта оставшихся часов тоже используем московское времяя
-        const purchaseTimeMSK = moscowTime.getTime();
-        const nowMSK = now.getTime() + (3 * 60 * 60 * 1000); // Текущее время + 3 часа
-        const diff = nowMSK - purchaseTimeMSK;
-        const hoursLeft = Math.max(0, Math.floor((H24 - diff) / (3 * 60 * 60 * 1000)));
-        const isExp = diff > H24;
 
         return `
             <div class="list-card" style="border-left: 4px solid ${isExp ? 'var(--danger)' : 'var(--success)'}">
@@ -336,7 +332,7 @@ function renderPurchases() {
                 <div class="meta-box">
                     <div class="meta-label">Дата покупки (МСК)</div>
                     <div class="meta-value" style="font-size:0.85rem;">
-                        ${formattedDate}
+                        ${displayDate}
                     </div>
                 </div>
             </div>`;

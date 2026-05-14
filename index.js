@@ -26,6 +26,7 @@ const subjectsData = {
 
 const productsData = {
     //для 1 курса
+    //
 
 
     //для 2 курса

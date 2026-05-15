@@ -449,6 +449,28 @@ header {
 .subject-list {
     display: flex;
     flex-direction: column;
+    gap: 2rem;
+}
+
+.semester-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.semester-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.semester-subjects {
+    display: flex;
+    flex-direction: column;
+}
+
+.semester-empty {
+    color: var(--text-secondary);
+    padding: 1rem;
 }
 
 .subject-item {

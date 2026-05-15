@@ -14,6 +14,8 @@
 - `checkpoint_topics_programming.json` - сырые данные этой выгрузки с дисциплинами, главами и темами.
 - `checkpoint_topics_design.md` - выгрузка тем с меткой `isCheckPoint: true` для аккаунта веб-дизайна.
 - `checkpoint_topics_design.json` - сырые данные этой выгрузки с дисциплинами, главами и темами.
+- `cloudflare-worker.js` - актуальный код Cloudflare Worker для платежей, webhook и получения покупок.
+- `supabase_purchase_token_migration.sql` - миграция Supabase для `purchase_token` и нескольких товаров в одном заказе.
 
 ## Что уже сделано
 
@@ -180,6 +182,28 @@ node --check index.js
 дубликатов id нет
 count совпадает
 ```
+
+## Текущий платежный контур
+
+Стек:
+
+- GitHub Pages - фронт и хостинг.
+- Cloudflare Worker - создание платежа, webhook ЮKassa, получение покупок.
+- Supabase - таблица `purchases`.
+- ЮKassa - тестовый эквайринг.
+- Yandex Cloud Object Storage - запланирован для файлов, пока не подключен.
+
+Что изменено после анализа `chat-LXPshop.txt`:
+
+- Добавлен `purchase_token`, чтобы покупка не отдавалась только по `order_id`.
+- Фронт теперь хранит pending-заказ в `localStorage` под ключом `lxp_pending_order`.
+- После возврата с оплаты фронт делает повторные запросы к `/get-purchase/{orderId}?token={purchaseToken}`, чтобы пережить задержку webhook или временный сетевой сбой.
+- Корзина очищается только после успешной загрузки покупки.
+- `renderPurchases()` поддерживает ответ Worker как одну покупку или массив покупок.
+- Блок пароля удален из раздела "Мои покупки".
+- Упоминания пароля удалены из оферты.
+
+Важно: перед деплоем нового Worker нужно выполнить SQL из `supabase_purchase_token_migration.sql` в Supabase. Старый `UNIQUE` на `order_id` мешает нескольким товарам в одном заказе.
 
 ## Важное замечание по токену
 

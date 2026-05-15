@@ -826,6 +826,8 @@ let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
 let currentCourseId = 2;
 let currentCourseName = '2 курс';
 let currentCourseDir = 'Веб-разработка';
+const WORKER_URL = 'https://lxpshop-webhook.emilovchinnikov.workers.dev';
+const PENDING_ORDER_KEY = 'lxp_pending_order';
 
 // === NAVIGATION ===
 function goTo(pageId) {
@@ -967,7 +969,7 @@ async function checkout() {
 
     try {
         // Создаем платеж через Cloudflare Worker
-        const response = await fetch('https://lxpshop-webhook.emilovchinnikov.workers.dev/create-payment', {
+        const response = await fetch(`${WORKER_URL}/create-payment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -986,8 +988,20 @@ async function checkout() {
 
         // Перенаправляем на страницу оплаты ЮKassa
         if (data.confirmation_url) {
-            // Сохраняем номер заказа в localStorage
+            const pendingOrder = {
+                order_id: data.order_id,
+                purchase_token: data.purchase_token || data.token || '',
+                items: cart,
+                total,
+                created_at: new Date().toISOString()
+            };
+
+            localStorage.setItem(PENDING_ORDER_KEY, JSON.stringify(pendingOrder));
             localStorage.setItem('current_order_id', data.order_id);
+            if (pendingOrder.purchase_token) {
+                localStorage.setItem('current_purchase_token', pendingOrder.purchase_token);
+            }
+
             // Переходим на оплату
             window.location.href = data.confirmation_url;
         } else {
@@ -1002,13 +1016,79 @@ async function checkout() {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getPendingOrderFromStorage() {
+    try {
+        return JSON.parse(localStorage.getItem(PENDING_ORDER_KEY)) || null;
+    } catch (error) {
+        console.error('Invalid pending order:', error);
+        return null;
+    }
+}
+
+async function fetchPurchaseWithRetry(orderId, purchaseToken, attempts = 12, delayMs = 2000) {
+    const tokenParam = purchaseToken ? `?token=${encodeURIComponent(purchaseToken)}` : '';
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            const response = await fetch(`${WORKER_URL}/get-purchase/${encodeURIComponent(orderId)}${tokenParam}`);
+
+            if (response.ok) {
+                return await response.json();
+            }
+
+            if (response.status !== 404) {
+                console.error('Failed to load purchase, status:', response.status);
+            }
+        } catch (error) {
+            console.error('Error loading purchase:', error);
+        }
+
+        if (attempt < attempts) {
+            await sleep(delayMs);
+        }
+    }
+
+    return null;
+}
+
+function savePurchase(purchase) {
+    const incomingPurchases = Array.isArray(purchase) ? purchase : [purchase];
+    const savedPurchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
+
+    for (const item of incomingPurchases) {
+        const exists = savedPurchases.some(p => {
+            if (p.id && item.id) return p.id === item.id;
+            return p.order_id === item.order_id && p.product_title === item.product_title;
+        });
+
+        if (!exists) {
+            savedPurchases.unshift(item);
+        }
+    }
+
+    localStorage.setItem('lxp_purchases', JSON.stringify(savedPurchases));
+    purchases = savedPurchases;
+}
+
+function clearPendingOrder() {
+    localStorage.removeItem(PENDING_ORDER_KEY);
+    localStorage.removeItem('current_order_id');
+    localStorage.removeItem('current_purchase_token');
+}
+
 // Проверка статуса платежа при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
     updateBadge(); // ✅ Сначала обновляем бейдж
 
     // Проверяем, есть ли параметр ?success=true в URL
     const urlParams = new URLSearchParams(window.location.search);
-    const orderId = localStorage.getItem('current_order_id');
+    const pendingOrder = getPendingOrderFromStorage();
+    const orderId = urlParams.get('order_id') || pendingOrder?.order_id || localStorage.getItem('current_order_id');
+    const purchaseToken = urlParams.get('token') || pendingOrder?.purchase_token || localStorage.getItem('current_purchase_token') || '';
 
     // Показываем страницу покупок, если есть success=true
     if (urlParams.get('success') === 'true') {
@@ -1016,36 +1096,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         goTo('purchases');
 
         if (orderId) {
-            // Загружаем данные о покупке
-            try {
-                const response = await fetch(`https://lxpshop-webhook.emilovchinnikov.workers.dev/get-purchase/${orderId}`);
+            const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken);
 
-                if (response.ok) {
-                    const purchase = await response.json();
-                    console.log('✅ Purchase loaded:', purchase);
+            if (purchase) {
+                console.log('✅ Purchase loaded:', purchase);
+                savePurchase(purchase);
 
-                    // Добавляем покупку в localStorage
-                    let purchases = JSON.parse(localStorage.getItem('lxp_purchases')) || [];
-
-                    // Проверяем, нет ли уже такой покупки
-                    const exists = purchases.some(p => p.order_id === purchase.order_id);
-                    if (!exists) {
-                        purchases.unshift(purchase);
-                        localStorage.setItem('lxp_purchases', JSON.stringify(purchases));
-
-                        // Очищаем корзину и текущий заказ
-                        cart = [];
-                        localStorage.setItem('lxp_cart', JSON.stringify(cart));
-                        localStorage.removeItem('current_order_id');
-
-                        // Перерисовываем покупки
-                        renderPurchases();
-                    }
-                } else {
-                    console.error('Failed to load purchase, status:', response.status);
-                }
-            } catch (error) {
-                console.error('Error loading purchase:', error);
+                // Очищаем корзину только после подтвержденной загрузки покупки
+                cart = [];
+                localStorage.setItem('lxp_cart', JSON.stringify(cart));
+                clearPendingOrder();
+                renderPurchases();
+            } else {
+                renderPurchases();
+                alert('Оплата прошла, но покупка еще не загрузилась. Обнови страницу через несколько секунд.');
             }
         }
     }
@@ -1059,7 +1123,9 @@ function showSuccessPage() {
 // === PURCHASES LOGIC ===
 function renderPurchases() {
     const container = document.getElementById('purchasesList');
-    if(purchases.length === 0) {
+    const pendingOrder = getPendingOrderFromStorage();
+
+    if(purchases.length === 0 && !pendingOrder) {
         container.innerHTML = '<div class="list-card" style="text-align:center; padding:3rem; color:#666;">Покупок пока нет</div>';
         return;
     }
@@ -1067,7 +1133,17 @@ function renderPurchases() {
     const now = Date.now();
     const H24 = 24 * 60 * 60 * 1000;
 
-    container.innerHTML = purchases.map(p => {
+    const pendingHtml = pendingOrder ? `
+            <div class="list-card" style="border-left: 4px solid var(--accent)">
+                <span class="purchase-status status-ok">Ожидает подтверждения</span>
+                <h3 style="margin-bottom:1rem;">Заказ обрабатывается</h3>
+                <div class="meta-box">
+                    <div class="meta-label">Статус</div>
+                    <div class="meta-value">Если оплата уже прошла, обнови страницу через несколько секунд.</div>
+                </div>
+            </div>` : '';
+
+    const purchasesHtml = purchases.map(p => {
         if (!p.created_at) return '';
 
         // ✅ Явно указываем что дата в UTC (добавляем Z если нет)
@@ -1100,11 +1176,6 @@ function renderPurchases() {
                     ${isExp ? 'Ссылка истекла' : `Активно (${hoursLeft} ч.)`}
                 </span>
                 <h3 style="margin-bottom:1rem;">${p.product_title || 'Без названия'}</h3>
-                
-                <div class="meta-box">
-                    <div class="meta-label">Пароль от архива (доступен всегда)</div>
-                    <div class="meta-value" style="color:var(--accent); font-size:1.1rem;">${p.password || 'Не указан'}</div>
-                </div>
 
                 <div class="meta-box">
                     <div class="meta-label">Ссылка на скачивание (24 часа)</div>
@@ -1124,6 +1195,8 @@ function renderPurchases() {
                 </div>
             </div>`;
     }).join('');
+
+    container.innerHTML = pendingHtml + purchasesHtml;
 }
 
 // Init

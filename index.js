@@ -1187,8 +1187,8 @@ function openSubject(subId, subName) {
                     <div class="prod-title">${p.title}</div>
                     <div class="prod-price">${p.price} ₽</div>
                     <div class="prod-btns">
-                        <button class="btn-cart" onclick="addToCart(${p.id}, '${p.title}', ${p.price}, '${subName}')">В корзину</button>
-                        <button class="btn-buy" onclick="buyNow(${p.id}, '${p.title}', ${p.price}, '${subName}')">Купить</button>
+                        <button class="btn-cart" onclick="addProductToCart('${subId}', ${p.id})">В корзину</button>
+                        <button class="btn-buy" onclick="buyProductNow('${subId}', ${p.id})">Купить</button>
                     </div>
                 </div>
             `).join('');
@@ -1196,6 +1196,27 @@ function openSubject(subId, subName) {
 }
 
 // === CART LOGIC ===
+function findProduct(subId, productId) {
+    return (productsData[subId] || []).find(product => String(product.id) === String(productId));
+}
+
+function addProductToCart(subId, productId) {
+    const product = findProduct(subId, productId);
+    const subject = document.getElementById('prodSubjectTitle').textContent;
+
+    if (!product) {
+        alert('Не удалось найти товар. Обнови страницу и попробуй еще раз.');
+        return;
+    }
+
+    addToCart(product.id, product.title, product.price, subject);
+}
+
+function buyProductNow(subId, productId) {
+    addProductToCart(subId, productId);
+    goTo('cart');
+}
+
 function addToCart(id, title, price, subject) {
     cart.push({id, title, price, subject});
     saveCart();

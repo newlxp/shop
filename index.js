@@ -128,7 +128,7 @@ const subjectsData = {
 
     3: { //для 3 курса
         1: [
-            // {id: 'java', name: 'Java', count: 1}
+            {id: 'Test', name: 'Test', count: 1}
         ],
         2: []
     }
@@ -1115,7 +1115,7 @@ const productsData = {
 
     //для 3 курса
     'java': [
-        {id: 3101, title: 'КР №1: Фундамент и синтаксис', price: 250}
+        {id: 3101, title: 'Тест оплата', price: 10}
     ]
 };
 

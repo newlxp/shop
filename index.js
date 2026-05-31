@@ -43,7 +43,7 @@ const subjectsData = {
             // {id: 'eng-a2-1', name: 'Английский язык, А2+', count: 12},
         ],
         2: [
-            // {id: 'js-dom', name: 'JavaScript DOM', count: 6},
+            {id: 'js-dom', name: 'JavaScript DOM', count: 6},
             // {id: 'nodejs', name: 'Node.js', count: 14},
             // {id: 'python-web', name: 'Python on web', count: 17},
             // {id: 'xml', name: 'XML технологии', count: 9},
@@ -505,11 +505,11 @@ const productsData = {
     ],
     'js-dom': [
         {id: 211101, title: 'КТ №1. Таблица с генерацией чисел', price: 100},
-        {id: 211102, title: 'КТ №2. Работа с контентом на странице', price: 100},
+        {id: 211102, title: 'КТ №2. Работа с контентом на странице', price: 50},
         {id: 211103, title: 'КТ №3. Создание выпадающего меню', price: 100},
-        {id: 211104, title: 'КТ №4. Слайдер', price: 100},
-        {id: 211105, title: 'КТ №5. Банковская карта', price: 100},
-        {id: 211106, title: 'КТ №6. Создание динамичного веб-приложения', price: 100}
+        {id: 211104, title: 'КТ №4. Слайдер', price: 50},
+        {id: 211105, title: 'КТ №5. Банковская карта', price: 200}
+        // {id: 211106, title: 'КТ №6. Создание динамичного веб-приложения', price: 100}
     ],
     'nodejs': [
         {id: 211201, title: 'КТ №1. Установка Node.js. REPL', price: 100},

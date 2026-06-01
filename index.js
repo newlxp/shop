@@ -45,7 +45,7 @@ const subjectsData = {
         2: [
             {id: 'js-dom', name: 'JavaScript DOM', count: 6},
             {id: 'nodejs', name: 'Node.js', count: 14},
-            // {id: 'python-web', name: 'Python on web', count: 17},
+            {id: 'python-web', name: 'Python on web', count: 17},
             // {id: 'xml', name: 'XML технологии', count: 9},
             // {id: 'algo', name: 'Алгоритмы и структуры данных', count: 5},
             // {id: 'eng-a2', name: 'Английский язык, А2+', count: 13},

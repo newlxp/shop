@@ -1378,6 +1378,10 @@ async function fetchPurchaseWithRetry(orderId, purchaseToken, attempts = 12, del
                 }
             }
 
+            if (response.status === 202) {
+                return await response.json();
+            }
+
             if (response.status !== 404) {
                 console.error('Failed to load purchase, status:', response.status);
             }
@@ -1416,6 +1420,16 @@ function clearPendingOrder() {
     localStorage.removeItem(PENDING_ORDER_KEY);
     localStorage.removeItem('current_order_id');
     localStorage.removeItem('current_purchase_token');
+}
+
+function savePendingOrder(order, status = 'pending') {
+    if (!order) return;
+
+    localStorage.setItem(PENDING_ORDER_KEY, JSON.stringify({
+        ...order,
+        payment_status: status,
+        checked_at: new Date().toISOString()
+    }));
 }
 
 function saveCanceledOrder(order) {
@@ -1458,6 +1472,15 @@ async function syncPendingOrderStatus({showPurchasesPage = false, showCanceledAl
 
         if (showCanceledAlert) {
             alert('Платеж был отменен.');
+        }
+        return;
+    }
+
+    if (purchase?.status === 'pending' || purchase?.status === 'waiting_for_capture') {
+        savePendingOrder(pendingOrder || {order_id: orderId, purchase_token: purchaseToken}, purchase.status);
+
+        if (showPurchasesPage || isPurchasesPageActive()) {
+            renderPurchases();
         }
         return;
     }
@@ -1525,11 +1548,11 @@ function renderPurchases() {
 
     const pendingHtml = pendingOrder ? `
             <div class="list-card" style="border-left: 4px solid var(--accent)">
-                <span class="purchase-status status-ok">Ожидает подтверждения</span>
-                <h3 style="margin-bottom:1rem;">Заказ обрабатывается</h3>
+                <span class="purchase-status status-ok">${pendingOrder.payment_status === 'pending' ? 'Ожидает оплаты' : 'Ожидает подтверждения'}</span>
+                <h3 style="margin-bottom:1rem;">${pendingOrder.payment_status === 'pending' ? 'Оплата не завершена' : 'Заказ обрабатывается'}</h3>
                 <div class="meta-box">
                     <div class="meta-label">Статус</div>
-                    <div class="meta-value">Если оплата уже прошла, обнови страницу через несколько секунд.</div>
+                    <div class="meta-value">${pendingOrder.payment_status === 'pending' ? 'Платеж создан, но YooKassa пока не подтвердила оплату. Если ты не планируешь оплачивать заказ, можно просто оформить новый.' : 'Если оплата уже прошла, обнови страницу через несколько секунд.'}</div>
                 </div>
             </div>` : '';
 

@@ -1114,7 +1114,7 @@ const productsData = {
 
 
     //для 3 курса
-    'java': [
+    'Test': [
         {id: 3101, title: 'Тест оплата', price: 10}
     ]
 };
@@ -1360,6 +1360,13 @@ async function fetchPurchaseWithRetry(orderId, purchaseToken, attempts = 12, del
                 return await response.json();
             }
 
+            if (response.status === 409) {
+                const errorData = await response.json().catch(() => ({}));
+                if (errorData.status === 'canceled') {
+                    return errorData;
+                }
+            }
+
             if (response.status !== 404) {
                 console.error('Failed to load purchase, status:', response.status);
             }
@@ -1418,7 +1425,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (orderId) {
             const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken);
 
-            if (purchase) {
+            if (purchase?.status === 'canceled') {
+                clearPendingOrder();
+                renderPurchases();
+                alert('Платеж был отменен. Заказ удален из обработки.');
+            } else if (purchase) {
                 console.log('✅ Purchase loaded:', purchase);
                 savePurchase(purchase);
 
@@ -1430,6 +1441,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 renderPurchases();
                 alert('Оплата прошла, но покупка еще не загрузилась. Обнови страницу через несколько секунд.');
+            }
+        }
+
+        return;
+    }
+
+    if (pendingOrder?.order_id) {
+        const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken, 1, 0);
+
+        if (purchase?.status === 'canceled') {
+            clearPendingOrder();
+
+            if (document.getElementById('purchases').classList.contains('active')) {
+                renderPurchases();
+            }
+        } else if (purchase) {
+            savePurchase(purchase);
+            cart = [];
+            localStorage.setItem('lxp_cart', JSON.stringify(cart));
+            clearPendingOrder();
+
+            if (document.getElementById('purchases').classList.contains('active')) {
+                renderPurchases();
             }
         }
     }

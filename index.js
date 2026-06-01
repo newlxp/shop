@@ -1312,6 +1312,7 @@ async function checkout() {
             const pendingOrder = {
                 order_id: data.order_id,
                 purchase_token: data.purchase_token || data.token || '',
+                confirmation_url: data.confirmation_url,
                 items: cart,
                 total,
                 created_at: new Date().toISOString()
@@ -1477,7 +1478,10 @@ async function syncPendingOrderStatus({showPurchasesPage = false, showCanceledAl
     }
 
     if (purchase?.status === 'pending' || purchase?.status === 'waiting_for_capture') {
-        savePendingOrder(pendingOrder || {order_id: orderId, purchase_token: purchaseToken}, purchase.status);
+        savePendingOrder({
+            ...(pendingOrder || {order_id: orderId, purchase_token: purchaseToken}),
+            confirmation_url: purchase.confirmation_url || pendingOrder?.confirmation_url || ''
+        }, purchase.status);
 
         if (showPurchasesPage || isPurchasesPageActive()) {
             renderPurchases();
@@ -1554,6 +1558,11 @@ function renderPurchases() {
                     <div class="meta-label">Статус</div>
                     <div class="meta-value">${pendingOrder.payment_status === 'pending' ? 'Платеж создан, но YooKassa пока не подтвердила оплату. Если ты не планируешь оплачивать заказ, можно просто оформить новый.' : 'Если оплата уже прошла, обнови страницу через несколько секунд.'}</div>
                 </div>
+                ${pendingOrder.confirmation_url ? `
+                    <button class="checkout-btn" style="margin-top:1rem;" onclick="window.location.href='${pendingOrder.confirmation_url}'">
+                        Вернуться к оплате
+                    </button>
+                ` : ''}
             </div>` : '';
 
     const canceledHtml = canceledOrder ? `

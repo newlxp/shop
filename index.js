@@ -44,7 +44,7 @@ const subjectsData = {
         ],
         2: [
             {id: 'js-dom', name: 'JavaScript DOM', count: 6},
-            // {id: 'nodejs', name: 'Node.js', count: 14},
+            {id: 'nodejs', name: 'Node.js', count: 14},
             // {id: 'python-web', name: 'Python on web', count: 17},
             // {id: 'xml', name: 'XML технологии', count: 9},
             // {id: 'algo', name: 'Алгоритмы и структуры данных', count: 5},
@@ -512,20 +512,20 @@ const productsData = {
         // {id: 211106, title: 'КТ №6. Создание динамичного веб-приложения', price: 100}
     ],
     'nodejs': [
-        {id: 211201, title: 'КТ №1. Установка Node.js. REPL', price: 100},
-        {id: 211202, title: 'КТ №2. Модули. Глобальные объекты', price: 100},
-        {id: 211203, title: 'КТ №3. NPM. Package.json. Работа с пакетами', price: 100},
-        {id: 211204, title: 'КТ № 4. Nodemon. Асинхронность в Node.js.', price: 100},
-        {id: 211205, title: 'КТ № 5. Работа с файлами. События в Node.js. Потоки данных. Канал Pipe.', price: 100},
-        {id: 211206, title: 'КТ №6. Сервер. Получение данных от клиента. Шаблоны', price: 100},
-        {id: 211207, title: 'КТ №7. Подключение и выполнение запросов к MySQL. Операции с данными', price: 100},
-        {id: 211208, title: 'КТ №8. Пулы подключений', price: 100},
-        {id: 211209, title: 'КТ № 9. Express. Отправка ответа. Маршрутизация.', price: 100},
-        {id: 211210, title: 'КТ № 10. Express. Переадресация. POST-запросы. JSON и AJAX.', price: 100},
-        {id: 211211, title: 'КТ № 11. Express. Handlebars.', price: 100},
-        {id: 211212, title: 'КТ № 12. Express. EJS. Pug.', price: 100},
-        {id: 211213, title: 'КТ № 13. Express. Создание API.', price: 100},
-        {id: 211214, title: 'КТ № 14. Конфигурация multer. Загрузка файлов с помощью multer.', price: 100}
+        {id: 211201, title: 'КТ №1. Установка Node.js. REPL', price: 25},
+        {id: 211202, title: 'КТ №2. Модули. Глобальные объекты', price: 25},
+        {id: 211203, title: 'КТ №3. NPM. Package.json. Работа с пакетами', price: 50},
+        {id: 211204, title: 'КТ № 4. Nodemon. Асинхронность в Node.js.', price: 50},
+        {id: 211205, title: 'КТ № 5. Работа с файлами. События в Node.js. Потоки данных. Канал Pipe.', price: 50},
+        {id: 211206, title: 'КТ №6. Сервер. Получение данных от клиента. Шаблоны', price: 50},
+        {id: 211207, title: 'КТ №7. Подключение и выполнение запросов к MySQL. Операции с данными', price: 50},
+        {id: 211208, title: 'КТ №8. Пулы подключений', price: 25},
+        {id: 211209, title: 'КТ № 9. Express. Отправка ответа. Маршрутизация.', price: 50},
+        {id: 211210, title: 'КТ № 10. Express. Переадресация. POST-запросы. JSON и AJAX.', price: 50},
+        {id: 211211, title: 'КТ № 11. Express. Handlebars.', price: 75},
+        // {id: 211212, title: 'КТ № 12. Express. EJS. Pug.', price: 100},
+        // {id: 211213, title: 'КТ № 13. Express. Создание API.', price: 100},
+        // {id: 211214, title: 'КТ № 14. Конфигурация multer. Загрузка файлов с помощью multer.', price: 100}
     ],
     'python-web': [
         {id: 211301, title: 'Функции ввода-вывода. Строки. Управляющие конструкции', price: 100},

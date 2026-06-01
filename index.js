@@ -1127,6 +1127,7 @@ let currentCourseName = '2 курс';
 let currentCourseDir = 'Веб-разработка';
 const WORKER_URL = 'https://lxpshop-webhook.emilovchinnikov.workers.dev';
 const PENDING_ORDER_KEY = 'lxp_pending_order';
+const CANCELED_ORDER_KEY = 'lxp_canceled_order';
 
 // === NAVIGATION ===
 function goTo(pageId) {
@@ -1317,6 +1318,7 @@ async function checkout() {
             };
 
             localStorage.setItem(PENDING_ORDER_KEY, JSON.stringify(pendingOrder));
+            localStorage.removeItem(CANCELED_ORDER_KEY);
             localStorage.setItem('current_order_id', data.order_id);
             if (pendingOrder.purchase_token) {
                 localStorage.setItem('current_purchase_token', pendingOrder.purchase_token);
@@ -1345,6 +1347,15 @@ function getPendingOrderFromStorage() {
         return JSON.parse(localStorage.getItem(PENDING_ORDER_KEY)) || null;
     } catch (error) {
         console.error('Invalid pending order:', error);
+        return null;
+    }
+}
+
+function getCanceledOrderFromStorage() {
+    try {
+        return JSON.parse(localStorage.getItem(CANCELED_ORDER_KEY)) || null;
+    } catch (error) {
+        console.error('Invalid canceled order:', error);
         return null;
     }
 }
@@ -1407,64 +1418,88 @@ function clearPendingOrder() {
     localStorage.removeItem('current_purchase_token');
 }
 
-// Проверка статуса платежа при загрузке страницы
-document.addEventListener('DOMContentLoaded', async () => {
-    updateBadge(); // ✅ Сначала обновляем бейдж
+function saveCanceledOrder(order) {
+    if (!order) return;
 
-    // Проверяем, есть ли параметр ?success=true в URL
+    localStorage.setItem(CANCELED_ORDER_KEY, JSON.stringify({
+        ...order,
+        canceled_at: new Date().toISOString()
+    }));
+}
+
+function isPurchasesPageActive() {
+    return document.getElementById('purchases').classList.contains('active');
+}
+
+async function syncPendingOrderStatus({showPurchasesPage = false, showCanceledAlert = false} = {}) {
     const urlParams = new URLSearchParams(window.location.search);
     const pendingOrder = getPendingOrderFromStorage();
     const orderId = urlParams.get('order_id') || pendingOrder?.order_id || localStorage.getItem('current_order_id');
     const purchaseToken = urlParams.get('token') || pendingOrder?.purchase_token || localStorage.getItem('current_purchase_token') || '';
 
-    // Показываем страницу покупок, если есть success=true
-    if (urlParams.get('success') === 'true') {
-        // Показываем страницу покупок СРАЗУ
-        goTo('purchases');
-
-        if (orderId) {
-            const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken);
-
-            if (purchase?.status === 'canceled') {
-                clearPendingOrder();
-                renderPurchases();
-                alert('Платеж был отменен. Заказ удален из обработки.');
-            } else if (purchase) {
-                console.log('✅ Purchase loaded:', purchase);
-                savePurchase(purchase);
-
-                // Очищаем корзину только после подтвержденной загрузки покупки
-                cart = [];
-                localStorage.setItem('lxp_cart', JSON.stringify(cart));
-                clearPendingOrder();
-                renderPurchases();
-            } else {
-                renderPurchases();
-                alert('Оплата прошла, но покупка еще не загрузилась. Обнови страницу через несколько секунд.');
-            }
-        }
-
+    if (!pendingOrder?.order_id && !orderId) {
         return;
     }
 
-    if (pendingOrder?.order_id) {
-        const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken, 1, 0);
+    if (showPurchasesPage) {
+        goTo('purchases');
+    }
 
-        if (purchase?.status === 'canceled') {
-            clearPendingOrder();
+    const attempts = showPurchasesPage ? 12 : 1;
+    const purchase = await fetchPurchaseWithRetry(orderId, purchaseToken, attempts, 2000);
 
-            if (document.getElementById('purchases').classList.contains('active')) {
-                renderPurchases();
-            }
-        } else if (purchase) {
-            savePurchase(purchase);
-            cart = [];
-            localStorage.setItem('lxp_cart', JSON.stringify(cart));
-            clearPendingOrder();
+    if (purchase?.status === 'canceled') {
+        saveCanceledOrder(pendingOrder || {order_id: orderId, purchase_token: purchaseToken});
+        clearPendingOrder();
 
-            if (document.getElementById('purchases').classList.contains('active')) {
-                renderPurchases();
-            }
+        if (showPurchasesPage || isPurchasesPageActive()) {
+            renderPurchases();
+        }
+
+        if (showCanceledAlert) {
+            alert('Платеж был отменен.');
+        }
+        return;
+    }
+
+    if (purchase) {
+        console.log('✅ Purchase loaded:', purchase);
+        savePurchase(purchase);
+        cart = [];
+        localStorage.setItem('lxp_cart', JSON.stringify(cart));
+        clearPendingOrder();
+        localStorage.removeItem(CANCELED_ORDER_KEY);
+
+        if (showPurchasesPage || isPurchasesPageActive()) {
+            renderPurchases();
+        }
+        return;
+    }
+
+    if (showPurchasesPage) {
+        renderPurchases();
+        alert('Оплата прошла, но покупка еще не загрузилась. Обнови страницу через несколько секунд.');
+    }
+}
+
+// Проверка статуса платежа при загрузке страницы
+document.addEventListener('DOMContentLoaded', async () => {
+    updateBadge(); // ✅ Сначала обновляем бейдж
+
+    const urlParams = new URLSearchParams(window.location.search);
+    await syncPendingOrderStatus({
+        showPurchasesPage: urlParams.get('success') === 'true',
+        showCanceledAlert: urlParams.get('success') === 'true'
+    });
+});
+
+window.addEventListener('pageshow', async (event) => {
+    if (event.persisted) {
+        updateBadge();
+        await syncPendingOrderStatus();
+
+        if (isPurchasesPageActive()) {
+            renderPurchases();
         }
     }
 });
@@ -1478,8 +1513,9 @@ function showSuccessPage() {
 function renderPurchases() {
     const container = document.getElementById('purchasesList');
     const pendingOrder = getPendingOrderFromStorage();
+    const canceledOrder = getCanceledOrderFromStorage();
 
-    if(purchases.length === 0 && !pendingOrder) {
+    if(purchases.length === 0 && !pendingOrder && !canceledOrder) {
         container.innerHTML = '<div class="list-card" style="text-align:center; padding:3rem; color:#666;">Покупок пока нет</div>';
         return;
     }
@@ -1494,6 +1530,16 @@ function renderPurchases() {
                 <div class="meta-box">
                     <div class="meta-label">Статус</div>
                     <div class="meta-value">Если оплата уже прошла, обнови страницу через несколько секунд.</div>
+                </div>
+            </div>` : '';
+
+    const canceledHtml = canceledOrder ? `
+            <div class="list-card" style="border-left: 4px solid var(--danger)">
+                <span class="purchase-status status-exp">Отменен</span>
+                <h3 style="margin-bottom:1rem;">Заказ отменен</h3>
+                <div class="meta-box">
+                    <div class="meta-label">Статус</div>
+                    <div class="meta-value">Платеж не был завершен. Деньги не списаны, доступ к материалам не выдан.</div>
                 </div>
             </div>` : '';
 
@@ -1550,7 +1596,7 @@ function renderPurchases() {
             </div>`;
     }).join('');
 
-    container.innerHTML = pendingHtml + purchasesHtml;
+    container.innerHTML = canceledHtml + pendingHtml + purchasesHtml;
 }
 
 // Init
